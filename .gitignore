@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env*.example
+node_modules/
+dist/
+server.mjs
+coverage/
+*.log
+backups/*
+!backups/.gitkeep
+.DS_Store
+.vscode/
+.idea/

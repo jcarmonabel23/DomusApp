@@ -1,0 +1,122 @@
+/**
+ * @project DomusApp - Admin
+ * @file src/global/assets/index.css
+ * @description Estilos globales: fuentes, Mantine, Tailwind y tokens de marca
+ */
+
+/* Mantine en su capa: las utilidades de Tailwind (capa utilities) pueden ajustar sus componentes */
+@layer theme, base, mantine, components, utilities;
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
+@import "@mantine/core/styles.layer.css";
+@import "@mantine/dates/styles.layer.css";
+@import "@mantine/notifications/styles.layer.css";
+@import "tailwindcss";
+
+/* Paleta azul DomusApp disponible en Tailwind como bg-brand-50, text-brand-600, etc. */
+@theme {
+  --color-brand-50: #e7f2fd;
+  --color-brand-100: #cfe3fa;
+  --color-brand-200: #9fc6f3;
+  --color-brand-300: #6ba7ec;
+  --color-brand-400: #418de6;
+  --color-brand-500: #287ee3;
+  --color-brand-600: #1876e2;
+  --color-brand-700: #1572d3;
+  --color-brand-800: #0b5fb3;
+  --color-brand-900: #004f99;
+  --font-sans: "Montserrat", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f9fafb; /* gray-50, como FabriHub */
+  color: #111827;
+  font-family: "Montserrat", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------ Modo oscuro
+ * Mantine cambia sus componentes solo. Las utilidades de Tailwind (bg-gray-50, text-gray-900,
+ * border-gray-200, bg-brand-50…) leen variables --color-*: aquí se invierte la escala de grises y
+ * los tonos claros pasan a transparencias, para no tocar cada pantalla.
+ */
+/*
+ * Colores de gráficos por categoría (identidad de cada serie, en orden fijo). Paleta validada para
+ * daltonismo en claro y en oscuro (cada modo con sus propios tonos); una serie sola usa el azul de marca.
+ */
+:root {
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-single: #1572d3;
+}
+:root[data-mantine-color-scheme="dark"] {
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-single: #287ee3;
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  color-scheme: dark;
+  --color-gray-50: #1a1b1e;
+  --color-gray-100: #2c2e33;
+  --color-gray-200: #373a40;
+  --color-gray-300: #4a4d55;
+  --color-gray-400: #7c8089;
+  --color-gray-500: #9a9ea6;
+  --color-gray-600: #b3b6bd;
+  --color-gray-700: #c9ccd1;
+  --color-gray-800: #dfe1e5;
+  --color-gray-900: #f1f3f5;
+  --color-brand-50: rgb(24 118 226 / 0.14);
+  --color-brand-100: rgb(24 118 226 / 0.24);
+  --color-brand-200: rgb(24 118 226 / 0.4);
+  --color-brand-300: rgb(24 118 226 / 0.6);
+  --color-teal-50: rgb(20 184 166 / 0.14);
+  --color-teal-600: #2dd4bf;
+  --color-teal-700: #5eead4;
+  --color-amber-50: rgb(245 158 11 / 0.14);
+  --color-amber-300: rgb(245 158 11 / 0.5);
+  --color-amber-700: #fcd34d;
+  --color-red-500: #f87171;
+  --color-red-700: #fca5a5;
+}
+
+:root[data-mantine-color-scheme="dark"] body {
+  background-color: var(--color-gray-50);
+  color: var(--mantine-color-text);
+}
+
+/* Superficies blancas (tarjetas, cabecera, menú) y textos de marca sobre fondo oscuro */
+:root[data-mantine-color-scheme="dark"] .bg-white {
+  background-color: var(--mantine-color-dark-7);
+}
+:root[data-mantine-color-scheme="dark"] .bg-white\/70 {
+  background-color: rgb(36 36 36 / 0.7);
+}
+:root[data-mantine-color-scheme="dark"] .text-brand-700,
+:root[data-mantine-color-scheme="dark"] .text-brand-600 {
+  color: #6ba7ec;
+}

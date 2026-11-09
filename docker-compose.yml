@@ -1,0 +1,243 @@
+# =====================================================================
+#  DomusApp · Gestión condominal en la nube
+#  (misma arquitectura y endurecimiento que FabriHub)
+#
+#  Arranque:   cp .env.example .env   (cambiar TODOS los secretos)
+#              docker compose up -d --build
+#  Sólo BD:    docker compose up -d db
+#  pgAdmin:    docker compose --profile tools up -d   -> http://127.0.0.1:5051
+#  Reset BD:   docker compose down -v   (vuelve a ejecutar db/init)
+#
+#  La app móvil (apps/mobile, Expo) NO corre en Docker: se levanta con
+#  `npx expo start` y llega a la API por el proxy del panel (WEB_PORT).
+# =====================================================================
+name: domusapp
+
+x-endurecido: &endurecido
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  # ------------------------------------------------------------ Datos
+  db:
+    <<: *endurecido
+    image: postgres:16-alpine
+    container_name: domus-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}                 # superusuario: sólo DDL / migraciones
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --encoding=UTF8 --locale=C.UTF-8"
+      TZ: ${TZ}
+      PGTZ: ${TZ}
+      APP_DB_USER: ${APP_DB_USER}                     # usado por db/init/99999_app_role.sh
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - log_min_duration_statement=1000
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks: [red_datos]
+    # La BD NO se publica al host. Para conectar DBeaver en desarrollo, descomentar:
+    # ports: ["127.0.0.1:5434:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Corre una vez en cada "up" y termina. La API no arranca hasta que termine bien.
+  migrate:
+    image: postgres:16-alpine
+    container_name: domus-migrate
+    restart: "no"
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["sh", "/migrate.sh"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_USER: ${APP_DB_USER}
+    volumes:
+      - ./db/migrate.sh:/migrate.sh:ro
+      - ./db/migrations:/migrations:ro
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [red_datos]
+
+  # ------------------------------------------------------------ API
+  api:
+    <<: *endurecido
+    build: ./apps/api
+    container_name: domus-api
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: 4000
+      TZ: ${TZ}
+      APP_ENVIRONMENT: ${APP_ENVIRONMENT}
+      APP_VERSION: ${APP_VERSION}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${APP_DB_USER}                         # nunca el superusuario
+      DB_PASSWORD: ${APP_DB_PASSWORD}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL}
+      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS}
+      SESSION_IDLE_MINUTES: ${SESSION_IDLE_MINUTES}
+      MOBILE_REFRESH_TTL_DAYS: ${MOBILE_REFRESH_TTL_DAYS:-30}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      OTP_TTL_MINUTES: ${OTP_TTL_MINUTES:-5}
+      OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-3}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES:-15}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-60}
+      PASSWORD_HISTORY: ${PASSWORD_HISTORY:-5}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_USER: ${SMTP_USER:-}                       # vacíos = mailpit sin autenticación
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD}
+      SEED_DEMO: ${SEED_DEMO:-false}                  # solo dev/qa: condominios y usuarios de prueba
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-Demo-Domus-2026}
+      UPLOADS_DIR: /data/uploads
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-8}
+      EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}  # push de Expo (necesita internet); la campana y el socket funcionan sin esto
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    networks: [red_datos, red_app]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+
+  # ------------------------------------------------------------ Panel administrativo
+  # Express (server.mjs) sirve la SPA de Vite y hace de proxy /api -> api:4000.
+  # El navegador y la app móvil sólo ven este origen; la API no se publica.
+  admin:
+    <<: *endurecido
+    build:
+      context: ./apps/admin
+      args:
+        VITE_APP_VERSION: ${APP_VERSION}
+        VITE_ENVIRONMENT: ${APP_ENVIRONMENT}
+    container_name: domus-admin
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      API_TARGET: http://api:4000
+    ports:
+      - "${WEB_PORT}:3005"
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [red_app]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3005/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------ Correo en desarrollo
+  mailpit:
+    <<: *endurecido
+    image: axllent/mailpit:v1.27
+    container_name: domus-mailpit
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT}:8025"           # bandeja web: invitaciones, OTP, avisos
+    networks: [red_app]
+
+  # ------------------------------------------------------------ Respaldos automáticos
+  backup:
+    <<: *endurecido
+    image: prodrigestivill/postgres-backup-local:16
+    container_name: domus-backup
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_EXTRA_OPTS: "-Fc -Z6"
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+      TZ: ${TZ}
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [red_datos]
+
+  # Respaldo diario del volumen de archivos (no están en pg_dump). Conserva 14 días.
+  backup-files:
+    <<: *endurecido
+    image: alpine:3.20
+    container_name: domus-backup-files
+    network_mode: none
+    environment:
+      TZ: ${TZ}
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /backups/uploads
+        while true; do
+          tar czf /backups/uploads/uploads-$(date +%Y%m%d).tar.gz -C /uploads . && echo "[backup-files] ok $(date)"
+          find /backups/uploads -name "uploads-*.tar.gz" -mtime +14 -delete
+          sleep 86400
+        done
+    volumes:
+      - uploads:/uploads:ro
+      - ./backups:/backups
+
+  # ------------------------------------------------------------ pgAdmin (sólo local, perfil tools)
+  pgadmin:
+    <<: *endurecido
+    image: dpage/pgadmin4:8
+    container_name: domus-pgadmin
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks: [red_datos, red_app]
+
+networks:
+  red_app:                 # admin <-> api <-> mailpit
+  red_datos:               # api <-> db <-> backup   (sin salida a internet)
+    internal: true
+
+volumes:
+  pg_data:
+  uploads:
+  pgadmin_data:
