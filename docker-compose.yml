@@ -116,6 +116,8 @@ services:
       UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-8}
       EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}  # push de Expo (necesita internet); la campana y el socket funcionan sin esto
       EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-simulated}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-dev-only-webhook-secret-cambiar}
     volumes:
       - uploads:/data/uploads
     depends_on:

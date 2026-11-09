@@ -1,7 +1,7 @@
 /**
  * @project DomusApp - Mobile
  * @file src/app/(tabs)/dashboard.tsx
- * @description Mi dashboard: casos, últimas visitas, proveedores y mensajería (se llena por fases)
+ * @description Mi dashboard: casos, estado de cuenta, últimas visitas, proveedores y mensajería
  */
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -11,6 +11,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "@/lib/api";
 import { fmtDateTime, type AccessLog } from "@/lib/access";
 import type { Thread } from "@/lib/alerts";
+import { useMoney, type FinanceHome } from "@/lib/finance";
 import { useRealtime } from "@/lib/realtime";
 import { colors, radius } from "@/theme/colors";
 
@@ -25,10 +26,8 @@ type Card = {
   badge?: number;
 };
 
-const LEFT: Card[] = [
-  { title: "Casos", text: "Dale seguimiento a tus casos aquí", icon: "support-agent", bg: colors.cardYellow, fg: "#5b4a1a", tall: true },
-  { title: "Nuevos proveedores", text: "Fase 7", icon: "storefront", bg: colors.cardLavender, fg: "#3f4566" }
-];
+const CASES: Card = { title: "Casos", text: "Dale seguimiento a tus casos aquí", icon: "support-agent", bg: colors.cardYellow, fg: "#5b4a1a", tall: true };
+const SUPPLIERS: Card = { title: "Nuevos proveedores", text: "Fase 7", icon: "storefront", bg: colors.cardLavender, fg: "#3f4566" };
 const VISITS: Omit<Card, "text"> = { title: "Mis últimas visitas", icon: "history", bg: colors.cardNavy, fg: "#e8ebf7" };
 
 
@@ -84,6 +83,14 @@ function DashCard({ card }: Readonly<{ card: Card }>) {
 export default function DashboardScreen() {
   const [visits, setVisits] = useState<AccessLog[] | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [finance, setFinance] = useState<FinanceHome | null>(null);
+  const money = useMoney();
+
+  const loadFinance = useCallback(() => {
+    api<FinanceHome>("/resident/finance")
+      .then(setFinance)
+      .catch(() => undefined);
+  }, []);
 
   const loadThreads = useCallback(() => {
     api<Thread[]>("/messages/threads")
@@ -97,9 +104,11 @@ export default function DashboardScreen() {
         .then((r) => setVisits(r.recent))
         .catch(() => setVisits([]));
       loadThreads();
-    }, [loadThreads])
+      loadFinance();
+    }, [loadThreads, loadFinance])
   );
   useRealtime("message:new", loadThreads);
+  useRealtime("finance:update", loadFinance);
 
   const unreadMessages = threads.reduce((n, t) => n + t.unread, 0);
   const messaging: Card = {
@@ -115,12 +124,24 @@ export default function DashboardScreen() {
       threads.length === 1 ? router.push({ pathname: "/chat", params: { unitId: threads[0].unitId } }) : router.push("/threads")
   };
 
+  const debt = finance?.units.reduce((n, u) => n + u.balance, 0) ?? 0;
+  const overdue = finance?.units.reduce((n, u) => n + u.overdue, 0) ?? 0;
+  const account: Card = {
+    title: "Estado de cuenta",
+    text: !finance ? "Cuotas y pagos" : debt > 0 ? `Saldo ${money(debt)}` : debt < 0 ? `A favor ${money(-debt)}` : "Está al día",
+    icon: "account-balance-wallet",
+    bg: overdue > 0 ? "#f4c7c3" : "#cfe8dc",
+    fg: overdue > 0 ? "#6b1d17" : "#14432f",
+    badge: overdue > 0 ? 1 : 0,
+    onPress: () => router.push("/finance")
+  };
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.columns}>
       <View style={styles.col}>
-        {LEFT.map((c) => (
-          <DashCard key={c.title} card={c} />
-        ))}
+        <DashCard card={CASES} />
+        <DashCard card={account} />
+        <DashCard card={SUPPLIERS} />
       </View>
       <View style={styles.col}>
         <VisitsCard visits={visits} />

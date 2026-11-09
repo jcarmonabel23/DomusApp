@@ -39,6 +39,10 @@ import { closeRealtime, initRealtime } from "./lib/realtime.js";
 import { alertsRoutes, guardAlertsRoutes, residentAlertsRoutes } from "./modules/alerts/routes.js";
 import { announcementsRoutes, messagesRoutes } from "./modules/messages/routes.js";
 import { notificationsRoutes } from "./modules/notifications/routes.js";
+import { financeRoutes } from "./modules/finance/admin.js";
+import { startFinanceScheduler, stopFinanceScheduler } from "./modules/finance/generate.js";
+import { paymentWebhook } from "./modules/finance/payments.js";
+import { residentFinanceRoutes } from "./modules/finance/resident.js";
 
 const app = express();
 
@@ -56,6 +60,10 @@ app.set("trust proxy", Number(process.env.TRUST_PROXY ?? 1));
 
 app.use(trace);
 app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } } }));
+// Webhooks de la pasarela: antes de express.json, porque la firma se valida sobre el cuerpo exacto
+app.post("/api/v1/finance/webhooks/:gateway", express.raw({ type: "application/json", limit: "64kb" }), (req, res, next) => {
+  paymentWebhook(req, res).catch(next);
+});
 app.use(express.json({ limit: "200kb" }));
 app.use(cookieParser());
 app.use((_req, res, next) => {
@@ -95,6 +103,8 @@ v1.use("/alerts", alertsRoutes);
 v1.use("/messages", messagesRoutes);
 v1.use("/announcements", announcementsRoutes);
 v1.use("/notifications", notificationsRoutes);
+v1.use("/finance", financeRoutes);
+v1.use("/resident", residentFinanceRoutes);
 app.use("/api/v1", v1);
 
 app.use((_req, res) => {
@@ -156,8 +166,10 @@ waitForDb()
       logger.info({ port: config.PORT, env: config.APP_ENVIRONMENT, version: config.APP_VERSION }, "[api] lista")
     );
     initRealtime(server);
+    startFinanceScheduler();
     const shutdown = (signal: string) => {
       logger.info({ signal }, "[api] cerrando…");
+      stopFinanceScheduler();
       void closeRealtime().finally(() => server.close(() => pool.end().finally(() => process.exit(0))));
       setTimeout(() => process.exit(1), 10_000).unref();
     };

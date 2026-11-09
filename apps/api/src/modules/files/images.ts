@@ -30,7 +30,7 @@ import { storage } from "../../lib/storage.js";
 sharp.cache({ memory: 32, files: 0 });
 sharp.concurrency(1);
 
-export type FilePurpose = "condominium_logo" | "authorization_photo";
+export type FilePurpose = "condominium_logo" | "authorization_photo" | "payment_receipt" | "expense_receipt";
 
 const MAX_PIXELS = 40_000_000;
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
@@ -50,6 +50,11 @@ export const PROFILES = {
     { file: "orig.webp", op: webp(inside(1200, 1200), 82) },
     { file: "400.webp", op: webp(cover(400)) },
     { file: "96.webp", op: webp(cover(96)) }
+  ],
+  /** Comprobante o factura: legible completo y una vista previa */
+  receipt: [
+    { file: "orig.webp", op: webp(inside(2000, 2000), 85) },
+    { file: "800.webp", op: webp(inside(800, 800), 80) }
   ],
   /** Logo: cabecera (alto 96), cuadrado para la app y PNG para documentos y correos */
   logo: [

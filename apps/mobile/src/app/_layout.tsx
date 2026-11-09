@@ -78,6 +78,8 @@ export default function RootLayout() {
           <Stack.Screen name="visits" />
           <Stack.Screen name="panic" options={{ presentation: "modal" }} />
           <Stack.Screen name="threads" />
+          <Stack.Screen name="finance" />
+          <Stack.Screen name="finance-pay" />
         </Stack.Protected>
         <Stack.Protected guard={ready}>
           <Stack.Screen name="chat" />

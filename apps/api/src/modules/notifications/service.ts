@@ -12,7 +12,7 @@ import { query, runInCondominium } from "../../db.js";
 import { logger } from "../../lib/logger.js";
 import { emitToUser } from "../../lib/realtime.js";
 
-export type NotificationKind = "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement";
+export type NotificationKind = "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement" | "payment" | "charge";
 
 export interface NotificationInput {
   kind: NotificationKind;
@@ -38,6 +38,16 @@ export async function staffUserIds(condominiumId: string): Promise<string[]> {
   const rows = await query<{ user_id: string }>(
     `SELECT uc.user_id FROM users_condominiums uc JOIN users u ON u.id = uc.user_id AND u.is_active
       WHERE uc.condominium_id = $1 AND uc.is_active AND uc.role IN ('guard', 'admin')`,
+    [condominiumId]
+  );
+  return rows.map((r) => r.user_id);
+}
+
+/** Administradores activos del condominio (cobros, aprobaciones) */
+export async function adminUserIds(condominiumId: string): Promise<string[]> {
+  const rows = await query<{ user_id: string }>(
+    `SELECT uc.user_id FROM users_condominiums uc JOIN users u ON u.id = uc.user_id AND u.is_active
+      WHERE uc.condominium_id = $1 AND uc.is_active AND uc.role = 'admin'`,
     [condominiumId]
   );
   return rows.map((r) => r.user_id);

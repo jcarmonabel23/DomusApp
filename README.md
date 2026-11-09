@@ -49,6 +49,14 @@ Para la fase 3 trae dos comunicados ("Corte de agua programado", fijado, para to
 piscina", para residentes), dos alertas ya atendidas (intrusos en A-101 y emergencia médica en B-302) y una
 conversación entre la caseta y A-101.
 
+Para la fase 5 (Finanzas) trae la cuota de mantenimiento de ₡85 000 desde hace tres meses (interés 2 % mensual,
+5 días de gracia, vence el día 10), dos cuentas bancarias (BCR y BAC), pagos de los meses anteriores, B-302 y
+A-202 en mora con su interés, una multa en A-102, una transferencia de B-302 por revisar (`TRF-88231`) y cuatro
+gastos. Pasarela de prueba (no cobra nada): `4242 4242 4242 4242` o `5555 5555 5555 4444` aprueban,
+`4000 0000 0000 0002` se rechaza y `4000 0000 0000 9995` da fondos insuficientes (cualquier vencimiento futuro y
+CVC); otra tarjeta real se rechaza con `NOT_TEST_CARD`. Variables: `PAYMENT_GATEWAY=simulated`,
+`PAYMENT_WEBHOOK_SECRET` (cámbiela fuera de desarrollo) y `PAYMENT_SIM_DELAY_MS` (demora del webhook simulado).
+
 En producción, `SEED_DEMO=false`.
 
 ## App móvil (Expo Go)
@@ -106,11 +114,12 @@ db/
   init/        línea base (solo corre con el volumen vacío)
   migrations/  cambios de esquema desde la fase 2: AAAAMMDD_NNNN_descripcion.sql, nunca se editan
 scripts/
-  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1 a 3
+  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3 y 5
   smoke/lib.mjs     utilidades comunes (llamadas a la API, OTP desde Mailpit, login, cliente Socket.IO mínimo)
   smoke/fase1.mjs   login con OTP vía Mailpit, RLS entre condominios, roles, refresh móvil
   smoke/fase2.mjs   autorizados, fotos firmadas, caseta, visitas no anunciadas, bitácora Excel/PDF, logo
   smoke/fase3.mjs   socket, ciclo de alertas en vivo, aislamiento, mensajería, comunicados, campana, push tokens
+  smoke/fase5.mjs   saldos y morosidad, FIFO, pagos manuales y en línea (webhook firmado), cargos, cuotas, gastos, exportes
 ```
 
 El límite de intentos de login (60 cada 15 min por IP) vive en memoria: para correr la suite completa dos veces

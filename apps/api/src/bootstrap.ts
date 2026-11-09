@@ -20,6 +20,7 @@ import { config } from "./config.js";
 import { one, withTx } from "./db.js";
 import { logger } from "./lib/logger.js";
 import { hashPassword } from "./lib/passwords.js";
+import { applyInterest, generateMonth } from "./modules/finance/generate.js";
 
 async function ensurePlatformAdmin(): Promise<void> {
   await withTx({}, async (client) => {
@@ -201,6 +202,81 @@ async function seedDemoAlerts(): Promise<void> {
   });
 }
 
+/**
+ * Fase 5: cuota de mantenimiento de ₡85 000 desde hace 3 meses, cuentas bancarias, pagos y gastos.
+ * Casi todas las filiales están al día con los meses anteriores; B-302 debe dos meses (con interés) y tiene una
+ * transferencia en revisión; A-202 debe el mes pasado; A-102 tiene una multa.
+ */
+async function seedDemoFinance(): Promise<void> {
+  const palmas = await one<{ id: string }>(`SELECT id FROM condominiums WHERE code = 'DEMO'`);
+  if (!palmas) return;
+  const users = await one<{ tenant: string; admin: string }>(
+    `SELECT (SELECT id FROM users WHERE email = 'inquilino@domusapp.local') AS tenant,
+            (SELECT id FROM users WHERE email = 'admin.demo@domusapp.local') AS admin`
+  );
+  if (!users?.tenant || !users.admin) return;
+
+  await withTx({ condominiumId: palmas.id, userId: users.admin }, async (client) => {
+    // Marca de "ya sembrado": los parámetros de finanzas del condominio demo
+    if (await one(`SELECT 1 FROM finance_settings LIMIT 1`, [], client)) return;
+    await client.query(`INSERT INTO finance_settings (interest_rate, grace_days, due_day, online_payments) VALUES (2, 5, 10, TRUE)`);
+    const bank = await one<{ id: string }>(
+      `INSERT INTO bank_accounts (bank, holder, number, iban, kind, currency_code, notes) VALUES
+         ('Banco de Costa Rica', 'Condominio Residencial Las Palmas', '001-0123456-7', 'CR05015201001012345678', 'checking', 'CRC',
+          'Indique la filial en el detalle de la transferencia'),
+         ('BAC Credomatic', 'Condominio Residencial Las Palmas', '912345678', 'CR21010200009123456789', 'savings', 'CRC', NULL)
+       RETURNING id`,
+      [],
+      client
+    );
+    const p = await one<{ m0: string; m1: string; m2: string; m3: string }>(
+      `SELECT to_char(date_trunc('month', CURRENT_DATE), 'YYYY-MM-DD') AS m0,
+              to_char(date_trunc('month', CURRENT_DATE) - INTERVAL '1 month', 'YYYY-MM-DD') AS m1,
+              to_char(date_trunc('month', CURRENT_DATE) - INTERVAL '2 months', 'YYYY-MM-DD') AS m2,
+              to_char(date_trunc('month', CURRENT_DATE) - INTERVAL '3 months', 'YYYY-MM-DD') AS m3`,
+      [],
+      client
+    );
+    await client.query(
+      `INSERT INTO fee_plans (name, kind, mode, amount, scope, start_period) VALUES ('Cuota de mantenimiento', 'ordinary', 'fixed', 85000, 'all', $1)`,
+      [p!.m3]
+    );
+    for (const period of [p!.m3, p!.m2, p!.m1, p!.m0]) await generateMonth(client, palmas.id, period);
+
+    // Pagos de los meses anteriores (día 5 de cada mes): B-302 solo pagó el primero; A-202 no pagó el último
+    for (const [i, period] of [p!.m3, p!.m2, p!.m1].entries()) {
+      await client.query(
+        `INSERT INTO payments (unit_id, method, amount, paid_on, reference, bank_account_id, status, reviewed_at, reviewed_by)
+         SELECT u.id, 'transfer', 85000, $1::date + 4, 'TRF-' || replace(u.code, '-', '') || '-' || $2::int, $3, 'approved', NOW(), fn_current_app_user()
+           FROM units u
+          WHERE u.is_active AND NOT (u.code = 'B-302' AND $2::int > 0) AND NOT (u.code = 'A-202' AND $2::int = 2)`,
+        [period, i, bank!.id]
+      );
+    }
+    await applyInterest(client, palmas.id, p!.m1);
+    await applyInterest(client, palmas.id, p!.m0);
+
+    await client.query(
+      `INSERT INTO charges (unit_id, kind, concept, amount, due_date, notes)
+       SELECT id, 'fine', 'Multa: música alta después de las 22:00', 25000, CURRENT_DATE + 10, 'Reglamento interno, art. 14'
+         FROM units WHERE code = 'A-102'`
+    );
+    await client.query(
+      `INSERT INTO payments (unit_id, method, amount, paid_on, reference, bank_account_id, notes, submitted_by)
+       SELECT id, 'transfer', 85000, CURRENT_DATE - 1, 'TRF-88231', $1, 'Pago de la cuota atrasada', $2 FROM units WHERE code = 'B-302'`,
+      [bank!.id, users.tenant]
+    );
+    await client.query(
+      `INSERT INTO expenses (spent_on, category, supplier, description, amount, bank_account_id) VALUES
+         (CURRENT_DATE - 20, 'security', 'Seguridad Alfa S.A.', 'Servicio de vigilancia 24/7 del mes', 1450000, $1),
+         (CURRENT_DATE - 12, 'gardening', 'Jardines del Valle', 'Mantenimiento de zonas verdes', 180000, $1),
+         (CURRENT_DATE - 6, 'utilities', 'AyA', 'Agua de áreas comunes', 96500, $1),
+         (CURRENT_DATE - 3, 'repairs', 'Ferretería El Pino', 'Cambio de luminarias del parqueo', 74300, $1)`,
+      [bank!.id]
+    );
+  });
+}
+
 async function seedDemoAccess(): Promise<void> {
   const palmas = await one<{ id: string }>(`SELECT id FROM condominiums WHERE code = 'DEMO'`);
   if (!palmas) return;
@@ -260,5 +336,6 @@ export async function bootstrap(): Promise<void> {
     await seedDemo();
     await seedDemoAccess();
     await seedDemoAlerts();
+    await seedDemoFinance();
   }
 }

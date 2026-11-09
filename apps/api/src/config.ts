@@ -55,6 +55,11 @@ const schema = z.object({
   EXPO_PUSH_ENABLED: bool,
   EXPO_ACCESS_TOKEN: z.string().optional().transform((v) => v || undefined),
 
+  // Pasarela de pago (fase 5). "simulated" = pruebas con tarjetas de prueba; el webhook se firma con el secreto
+  PAYMENT_GATEWAY: z.enum(["simulated"]).default("simulated"),
+  PAYMENT_WEBHOOK_SECRET: z.string().min(16, "PAYMENT_WEBHOOK_SECRET debe tener al menos 16 caracteres").default("dev-only-webhook-secret-cambiar"),
+  PAYMENT_SIM_DELAY_MS: z.coerce.number().int().min(0).max(30_000).default(1500),
+
   UPLOAD_MAX_MB: z.coerce.number().positive().max(20).default(8),
 
   ADMIN_EMAIL: z.email(),

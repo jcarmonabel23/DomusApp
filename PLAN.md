@@ -59,11 +59,11 @@ Tiene tres frentes: el **panel administrativo** (web), la **app móvil** (Propie
 - Accesibilidad: roles, etiquetas y estados en todos los botones, encabezados marcados, áreas táctiles de 44 pt, avisos de error anunciados y la alarma de pánico anunciada al lector de pantalla.
 - Builds con EAS listos (`eas.json`, `app.config.ts`): perfil `preview` (APK interno, "DomusApp (prueba)", HTTP permitido para la LAN) y `production`. En los builds, la alerta push suena con la sirena (canal `alerts-siren`). Proyecto `@jcarmona23/domusapp` creado y primer APK `preview` generado. Pendiente para el push con la app cerrada: clave FCM v1 de Firebase (`eas credentials -p android`) y `EXPO_PUSH_ENABLED=true`.
 
-### Fase 5 · Finanzas
-- Cuotas ordinarias y extraordinarias, intereses moratorios, multas y cargos especiales por filial. Las cuotas recurrentes se generan solas cada mes.
-- Estado de cuenta del Propietario o Inquilino.
-- Pago **en línea** con la pasarela simulada, o **manual** con comprobante y aprobación del administrador.
-- Gastos del condominio, cuentas bancarias y reporte de morosidad.
+### Fase 5 · Finanzas ✅
+- Cuotas ordinarias y extraordinarias, intereses moratorios, multas y cargos especiales por filial. Las cuotas recurrentes (monto fijo, por alícuota o por m²) se generan solas cada mes (programador cada hora, idempotente) o con «Generar mes». El interés se carga una vez al mes sobre el capital vencido después de los días de gracia (sin interés sobre interés). Los cargos no se borran: se anulan con motivo.
+- Pagos aplicados FIFO a la deuda más antigua (en la misma fecha, primero el interés). Estado de cuenta con saldo corrido, en la app y en PDF/Excel desde el panel, con envío por correo.
+- Pago **en línea** con la pasarela simulada (interfaz `PaymentGateway`, webhook firmado HMAC con tolerancia de 5 min, idempotente; la tarjeta nunca se guarda, solo marca y últimos 4) o **manual** (transferencia / depósito con referencia y foto del comprobante) con aprobación o rechazo con motivo del administrador (permiso nuevo `approve`).
+- Panel: módulo **FINANCE** con resumen, saldos y morosidad (exportable), cargos, pagos por revisar, cuotas recurrentes, gastos con factura (exportables) y cuentas bancarias y parámetros. App: tarjeta «Estado de cuenta» en Mi dashboard, movimientos, reporte de pago y pago con tarjeta; avisos `charge` y `payment` en la campana y por push.
 
 ### Fase 6 · Áreas comunes y reservaciones
 - Áreas con foto, reglamento, horario, duración máxima, anticipación, capacidad y costo.
