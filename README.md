@@ -68,6 +68,11 @@ vencer y otro vencido), seis casos en distintos estados (uno anónimo y uno del 
 vencida), dos asambleas (una celebrada con su acta en PDF y cuatro acuerdos, otra convocada para dentro de dos
 semanas), cinco documentos (uno solo para el personal) y ocho artículos de inventario con su bitácora.
 
+Para la fase 8 (Reportes) trae cinco meses de historia que terminan una semana antes de la creación de la base:
+unos 800 ingresos en la caseta (con horas pico, fines de semana más movidos y algunos rechazos), catorce alertas
+atendidas con distintos tiempos de respuesta y diez casos resueltos con su calificación. Se genera con una semilla
+fija, así que sale igual en cada base nueva.
+
 En producción, `SEED_DEMO=false`.
 
 ## App móvil (Expo Go)
@@ -125,7 +130,7 @@ db/
   init/        línea base (solo corre con el volumen vacío)
   migrations/  cambios de esquema desde la fase 2: AAAAMMDD_NNNN_descripcion.sql, nunca se editan
 scripts/
-  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3, 5, 6 y 7
+  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3, 5, 6, 7 y 8
   smoke/lib.mjs     utilidades comunes (llamadas a la API, OTP desde Mailpit, login, cliente Socket.IO mínimo)
   smoke/fase1.mjs   login con OTP vía Mailpit, RLS entre condominios, roles, refresh móvil
   smoke/fase2.mjs   autorizados, fotos firmadas, caseta, visitas no anunciadas, bitácora Excel/PDF, logo
@@ -133,6 +138,7 @@ scripts/
   smoke/fase5.mjs   saldos y morosidad, FIFO, pagos manuales y en línea (webhook firmado), cargos, cuotas, gastos, exportes
   smoke/fase6.mjs   áreas, disponibilidad, feriados, restricciones, validaciones, concurrencia, aprobación, cargos, bloqueos
   smoke/fase7.mjs   proveedores y contratos, casos (anónimos, estados, archivos, calificación), asambleas, acuerdos, documentos PDF, inventario
+  smoke/fase8.mjs   reportes (permisos, período, sumas por sección, cruce con Finanzas, exportes), tablero «Hoy», RLS
 ```
 
 El límite de intentos de login (60 cada 15 min por IP) vive en memoria: para correr la suite completa dos veces

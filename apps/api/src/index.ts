@@ -40,6 +40,7 @@ import { alertsRoutes, guardAlertsRoutes, residentAlertsRoutes } from "./modules
 import { announcementsRoutes, messagesRoutes } from "./modules/messages/routes.js";
 import { notificationsRoutes } from "./modules/notifications/routes.js";
 import { financeRoutes } from "./modules/finance/admin.js";
+import { reportsRoutes } from "./modules/reports/routes.js";
 import { startFinanceScheduler, stopFinanceScheduler } from "./modules/finance/generate.js";
 import { paymentWebhook } from "./modules/finance/payments.js";
 import { residentFinanceRoutes } from "./modules/finance/resident.js";
@@ -113,6 +114,7 @@ v1.use("/messages", messagesRoutes);
 v1.use("/announcements", announcementsRoutes);
 v1.use("/notifications", notificationsRoutes);
 v1.use("/finance", financeRoutes);
+v1.use("/reports", reportsRoutes);
 v1.use("/resident", residentFinanceRoutes);
 v1.use("/bookings", bookingRoutes);
 v1.use("/resident", residentBookingRoutes);

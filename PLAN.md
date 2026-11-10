@@ -79,8 +79,13 @@ Tiene tres frentes: el **panel administrativo** (web), la **app móvil** (Propie
 - **Inventario**: código, categoría, ubicación o área común, cantidad, valor, estado y foto; mantenimiento periódico con próxima fecha (alerta a 15 días) y bitácora de mantenimientos, reparaciones, traslados, cambios de estado y bajas.
 - Los PDF se validan por su contenido (encabezado y cierre) y se descargan con su nombre. Panel: módulos **CASES**, **ASSEMBLIES**, **DOCUMENTS**, **SUPPLIERS** e **INVENTORY** con exportes. App: Casos (lista, nuevo con fotos, detalle con conversación, confirmación y reapertura), Documentos, Asambleas con acuerdos, Seguimiento a acuerdos y directorio de proveedores; avisos `case`, `assembly` y `document` en la campana y por push.
 
-### Fase 8 · Reportes y tablero
-- Indicadores: ingresos, morosidad, accesos, incidentes y tiempos de atención de alertas. Todo se puede exportar.
+### Fase 8 · Reportes y tablero ✅
+- Módulo **REPORTS** con período rápido (este mes, 3, 6 o 12 meses, este año) u otro de hasta dos años; se agrupa por día hasta 45 días y por mes si es más largo, en la zona horaria del condominio.
+- **Ingresos y gastos**: facturado, cobrado, cobranza, gastos y resultado por período; cobros por medio de pago y gastos por categoría. **Morosidad** (foto de hoy, la misma cuenta FIFO de Finanzas): filiales en mora, índice, vencido, por cobrar, saldos a favor, antigüedad (1-30, 31-60, 61-90, +90 días) y las diez filiales con más deuda.
+- **Accesos**: ingresos, visitantes, con vehículo, no anunciadas, rechazados, estadía promedio, hora pico, por período, hora, día de la semana, tipo y filiales con más visitas. **Alertas**: respuesta promedio, mediana y más lenta, porcentaje respondido en 5 minutos o menos y cierre promedio, por período y por tipo. **Casos**: abiertos y resueltos, tiempo de solución, calificación, pendientes y vencidos, por categoría y estado. **Reservaciones**: confirmadas, horas, ingresos y por área.
+- Cada sección sale solo si el rol puede entrar a su módulo de origen. Exportación del reporte completo o de algunas secciones: Excel con una hoja por sección (números como número) y PDF con indicadores y tablas.
+- **Tablero**: bloque «Hoy» con lo que pide atención (alertas sin cerrar, ingresos y visitas por confirmar, pagos por revisar, morosidad, casos urgentes o vencidos, reservas por aprobar, contratos por vencer, mantenimientos y la próxima asamblea), cada uno con enlace a su módulo; se refresca en tiempo real.
+- Índices por fecha para las consultas del período. Datos de demostración con cinco meses de historia (bitácora, alertas y casos resueltos).
 
 ### Fase 9 · Publicación
 - Ambientes `qa` y `prod` con despliegue desde las ramas, HTTPS con Caddy y correo SMTP real (igual que el DEPLOY de FabriHub).
