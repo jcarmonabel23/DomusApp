@@ -30,7 +30,7 @@ import { storage } from "../../lib/storage.js";
 sharp.cache({ memory: 32, files: 0 });
 sharp.concurrency(1);
 
-export type FilePurpose = "condominium_logo" | "authorization_photo" | "payment_receipt" | "expense_receipt";
+export type FilePurpose = "condominium_logo" | "authorization_photo" | "payment_receipt" | "expense_receipt" | "amenity_photo";
 
 const MAX_PIXELS = 40_000_000;
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
@@ -39,6 +39,7 @@ type Op = (img: sharp.Sharp) => sharp.Sharp;
 
 const inside = (w: number, h: number): Op => (i) => i.resize(w, h, { fit: "inside", withoutEnlargement: true });
 const cover = (size: number): Op => (i) => i.resize(size, size, { fit: "cover", position: "attention" });
+const coverRect = (w: number, h: number): Op => (i) => i.resize(w, h, { fit: "cover", position: "attention" });
 const square = (size: number): Op => (i) => i.resize(size, size, { fit: "contain", background: TRANSPARENT });
 const webp = (op: Op, quality = 82): Op => (i) => op(i).webp({ quality });
 const png = (op: Op): Op => (i) => op(i).png({ compressionLevel: 9 });
@@ -55,6 +56,12 @@ export const PROFILES = {
   receipt: [
     { file: "orig.webp", op: webp(inside(2000, 2000), 85) },
     { file: "800.webp", op: webp(inside(800, 800), 80) }
+  ],
+  /** Foto de área común: completa, portada 16:9 (detalle) y tarjeta 4:3 (cuadrícula) */
+  amenity: [
+    { file: "orig.webp", op: webp(inside(1600, 1600), 82) },
+    { file: "1200x675.webp", op: webp(coverRect(1200, 675), 80) },
+    { file: "480x360.webp", op: webp(coverRect(480, 360), 78) }
   ],
   /** Logo: cabecera (alto 96), cuadrado para la app y PNG para documentos y correos */
   logo: [

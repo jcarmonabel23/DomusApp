@@ -18,6 +18,7 @@
 import type pg from "pg";
 import { config } from "./config.js";
 import { one, withTx } from "./db.js";
+import { chargeBooking } from "./modules/bookings/shared.js";
 import { logger } from "./lib/logger.js";
 import { hashPassword } from "./lib/passwords.js";
 import { applyInterest, generateMonth } from "./modules/finance/generate.js";
@@ -330,6 +331,96 @@ async function seedDemoAccess(): Promise<void> {
   logger.info("[bootstrap] datos de demostración de control de acceso creados");
 }
 
+async function seedDemoBookings(): Promise<void> {
+  const palmas = await one<{ id: string }>(`SELECT id FROM condominiums WHERE code = 'DEMO'`);
+  if (!palmas) return;
+  const users = await one<{ owner: string; tenant: string; admin: string }>(
+    `SELECT (SELECT id FROM users WHERE email = 'propietario@domusapp.local') AS owner,
+            (SELECT id FROM users WHERE email = 'inquilino@domusapp.local') AS tenant,
+            (SELECT id FROM users WHERE email = 'admin.demo@domusapp.local') AS admin`
+  );
+  if (!users?.owner || !users.tenant || !users.admin) return;
+
+  await withTx({ condominiumId: palmas.id, userId: users.admin }, async (client) => {
+    // Marca de "ya sembrado": cualquier área común del condominio demo
+    if (await one(`SELECT 1 FROM amenities LIMIT 1`, [], client)) return;
+    const unit = async (code: string) => (await one<{ id: string }>(`SELECT id FROM units WHERE code = $1`, [code], client))!.id;
+    const [a101, a102, b302] = [await unit("A-101"), await unit("A-102"), await unit("B-302")];
+
+    const rows = await client.query<{ id: string; name: string }>(
+      `INSERT INTO amenities (name, icon, description, rules, mode, capacity, open_time, close_time, slot_minutes, max_duration_minutes,
+                              min_advance_hours, max_advance_days, cancel_hours, max_active_per_unit, cost, requires_approval, block_delinquent) VALUES
+         ('Piscina', 'pool', 'Piscina semiolímpica con área de niños y duchas.',
+          E'1. Ducharse antes de entrar.
+2. Niños menores de 12 años con un adulto.
+3. No se permiten envases de vidrio.
+4. Máximo 6 invitados por filial.',
+          'shared', 25, '07:00', '21:00', 60, 120, 0, 7, 2, 2, 0, FALSE, FALSE),
+         ('Rancho BBQ', 'bbq', 'Rancho techado con parrilla de gas, fregadero y mesas para 20 personas.',
+          E'1. Dejar la parrilla y el área limpias.
+2. Música a volumen moderado; después de las 21:00, apagada.
+3. La basura se lleva al depósito.
+4. Cancelando con 48 h se anula el cargo.',
+          'exclusive', 20, '10:00', '22:00', 60, 240, 24, 30, 48, 2, 10000, FALSE, TRUE),
+         ('Salón de eventos', 'event', 'Salón climatizado con cocina, sonido y capacidad para 60 personas.',
+          E'1. La administración aprueba cada reserva.
+2. Hora máxima de salida: 23:00.
+3. Daños al mobiliario se cargan a la filial.
+4. Cancelando con 72 h se anula el cargo.',
+          'exclusive', 60, '09:00', '23:00', 60, 360, 72, 90, 72, 1, 35000, TRUE, TRUE),
+         ('Cancha multiuso', 'sports', 'Cancha de fútbol 5 y baloncesto con iluminación.',
+          E'1. Calzado deportivo.
+2. Apagar las luces al salir.',
+          'exclusive', 12, '06:00', '22:00', 60, 120, 0, 7, 2, 2, 0, FALSE, FALSE),
+         ('Gimnasio', 'gym', 'Máquinas de cardio y pesas.',
+          E'1. Toalla obligatoria.
+2. Regresar las pesas a su lugar.
+3. Mayores de 16 años.',
+          'shared', 8, '05:00', '22:00', 60, 60, 0, 3, 1, 1, 0, FALSE, FALSE)
+       RETURNING id, name`
+    );
+    const area = Object.fromEntries(rows.rows.map((r) => [r.name, r.id]));
+
+    // Feriado de Navidad (el próximo 25 de diciembre), limpieza de la piscina y una restricción a B-302
+    const xmas = (await one<{ d: string }>(
+      `SELECT to_char(CASE WHEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 12, 25) >= CURRENT_DATE
+                           THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 12, 25)
+                           ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int + 1, 12, 25) END, 'YYYY-MM-DD') AS d`,
+      [],
+      client
+    ))!.d;
+    await client.query(
+      `INSERT INTO amenity_blocks (amenity_id, unit_id, kind, starts_at, ends_at, reason) VALUES
+         (NULL, NULL, 'holiday', $4::date::timestamptz, ($4::date + 1)::timestamptz, 'Navidad'),
+         ($1, NULL, 'unavailable', (CURRENT_DATE + 3 + TIME '06:00')::timestamptz, (CURRENT_DATE + 3 + TIME '14:00')::timestamptz, 'Limpieza y cloración'),
+         ($2, $3, 'restriction', CURRENT_DATE::timestamptz, (CURRENT_DATE + 30)::timestamptz, 'Daños en el último evento (pendiente de reparación)')`,
+      [area["Piscina"], area["Salón de eventos"], b302, xmas]
+    );
+
+    const book = async (amenity: string, unitId: string, day: number, from: string, hours: number, guests: number, status: string, by: string, extra: { notes?: string; cancel?: string; cost?: number } = {}) => {
+      const r = await one<{ id: string }>(
+        `INSERT INTO bookings (amenity_id, unit_id, starts_at, ends_at, guests, notes, status, cost, booked_by, reviewed_by, reviewed_at,
+                               cancelled_by, cancelled_at, cancel_reason)
+         VALUES ($1, $2, (CURRENT_DATE + $3::int + $4::time)::timestamptz, (CURRENT_DATE + $3::int + $4::time)::timestamptz + make_interval(hours => $5::int),
+                 $6, $7, $8::varchar, $9, $10, CASE WHEN $8::varchar = 'approved' THEN fn_current_app_user() END, CASE WHEN $8::varchar = 'approved' THEN NOW() END,
+                 CASE WHEN $8::varchar = 'cancelled' THEN $10::uuid END, CASE WHEN $8::varchar = 'cancelled' THEN NOW() END, $11)
+         RETURNING id`,
+        [area[amenity], unitId, day, from, hours, guests, extra.notes ?? null, status, extra.cost ?? 0, by, extra.cancel ?? null],
+        client
+      );
+      return r!.id;
+    };
+    const bbq = await book("Rancho BBQ", a101, 5, "12:00", 4, 15, "approved", users.owner, { notes: "Cumpleaños de Sofía", cost: 10000 });
+    await chargeBooking(client, bbq);
+    await book("Piscina", a101, 1, "15:00", 2, 4, "approved", users.owner);
+    await book("Cancha multiuso", b302, 2, "18:00", 1, 10, "approved", users.tenant, { notes: "Mejenga de los martes" });
+    await book("Salón de eventos", a102, 12, "18:00", 5, 50, "pending", users.owner, { notes: "Fiesta de 15 años", cost: 35000 });
+    await book("Rancho BBQ", b302, 8, "14:00", 3, 8, "cancelled", users.tenant, { cancel: "Cambio de planes" });
+    await book("Rancho BBQ", a101, -6, "14:00", 4, 12, "approved", users.owner, { notes: "Almuerzo familiar" });
+  });
+  logger.info("[bootstrap] datos de demostración de reservaciones creados");
+}
+
 export async function bootstrap(): Promise<void> {
   await ensurePlatformAdmin();
   if (config.SEED_DEMO && config.APP_ENVIRONMENT !== "prod") {
@@ -337,5 +428,6 @@ export async function bootstrap(): Promise<void> {
     await seedDemoAccess();
     await seedDemoAlerts();
     await seedDemoFinance();
+    await seedDemoBookings();
   }
 }

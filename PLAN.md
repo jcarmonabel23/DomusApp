@@ -65,10 +65,11 @@ Tiene tres frentes: el **panel administrativo** (web), la **app móvil** (Propie
 - Pago **en línea** con la pasarela simulada (interfaz `PaymentGateway`, webhook firmado HMAC con tolerancia de 5 min, idempotente; la tarjeta nunca se guarda, solo marca y últimos 4) o **manual** (transferencia / depósito con referencia y foto del comprobante) con aprobación o rechazo con motivo del administrador (permiso nuevo `approve`).
 - Panel: módulo **FINANCE** con resumen, saldos y morosidad (exportable), cargos, pagos por revisar, cuotas recurrentes, gastos con factura (exportables) y cuentas bancarias y parámetros. App: tarjeta «Estado de cuenta» en Mi dashboard, movimientos, reporte de pago y pago con tarjeta; avisos `charge` y `payment` en la campana y por push.
 
-### Fase 6 · Áreas comunes y reservaciones
-- Áreas con foto, reglamento, horario, duración máxima, anticipación, capacidad y costo.
-- Calendario por hora con estados disponible, reservado, feriado y no disponible, y aprobación opcional.
-- Restricción de áreas por parte de la administración, para todos o para una filial.
+### Fase 6 · Áreas comunes y reservaciones ✅
+- Áreas con foto, reglamento, horario y días, bloques de 30 min a 2 h, duración máxima, anticipación mínima y máxima, capacidad y costo. Modo **exclusivo** (un grupo a la vez) o **compartido** (varias filiales hasta la capacidad), límite de reservas activas por filial y opción «solo filiales al día» (usa la morosidad de la fase 5).
+- Calendario por hora con estados disponible, reservado, por aprobar, feriado y no disponible; aprobación opcional con rechazo con motivo. El costo se carga al estado de cuenta al confirmarse y se anula si la filial cancela con la anticipación del área o si cancela la administración. La reserva bloquea la fila del área para que dos solicitudes simultáneas no tomen el mismo horario.
+- Feriados y cierres (de un área o de todas, por día u horas, con fin o indefinidos) y restricciones a una filial; al crearlos puede cancelar las reservas que choquen, avisando a cada filial.
+- Panel: módulo **BOOKINGS** con indicadores, calendario semanal por área, reservas (revisión, reserva a nombre de una filial, Excel/PDF), áreas y bloqueos. App: pestaña Reservaciones como en las capturas (saludo, buscador, cuadrícula de áreas), detalle con reglamento y horarios, Mis reservas con cancelación; avisos `booking` en la campana y por push.
 
 ### Fase 7 · Gestión administrativa
 - **Casos**: daños, mejoras, quejas, sugerencias y denuncias, con fotos y documentos, seguimiento por estados y respuesta.

@@ -43,6 +43,8 @@ import { financeRoutes } from "./modules/finance/admin.js";
 import { startFinanceScheduler, stopFinanceScheduler } from "./modules/finance/generate.js";
 import { paymentWebhook } from "./modules/finance/payments.js";
 import { residentFinanceRoutes } from "./modules/finance/resident.js";
+import { bookingRoutes } from "./modules/bookings/admin.js";
+import { residentBookingRoutes } from "./modules/bookings/resident.js";
 
 const app = express();
 
@@ -105,6 +107,8 @@ v1.use("/announcements", announcementsRoutes);
 v1.use("/notifications", notificationsRoutes);
 v1.use("/finance", financeRoutes);
 v1.use("/resident", residentFinanceRoutes);
+v1.use("/bookings", bookingRoutes);
+v1.use("/resident", residentBookingRoutes);
 app.use("/api/v1", v1);
 
 app.use((_req, res) => {

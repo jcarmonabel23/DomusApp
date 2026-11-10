@@ -12,7 +12,7 @@ import { query, runInCondominium } from "../../db.js";
 import { logger } from "../../lib/logger.js";
 import { emitToUser } from "../../lib/realtime.js";
 
-export type NotificationKind = "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement" | "payment" | "charge";
+export type NotificationKind = "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement" | "payment" | "charge" | "booking";
 
 export interface NotificationInput {
   kind: NotificationKind;

@@ -18,10 +18,10 @@ import { sessionStore } from "./session";
 
 export interface AppNotification {
   id: string;
-  kind: "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement" | "payment" | "charge";
+  kind: "alert" | "alert_update" | "visit" | "visit_update" | "message" | "announcement" | "payment" | "charge" | "booking";
   title: string;
   body: string | null;
-  data: { alertId?: string; unitId?: string; announcementId?: string; logId?: string; paymentId?: string };
+  data: { alertId?: string; unitId?: string; announcementId?: string; logId?: string; paymentId?: string; bookingId?: string; amenityId?: string };
   readAt: string | null;
   createdAt: string;
 }
@@ -97,6 +97,7 @@ export function openNotification(kind: string, data: AppNotification["data"]): v
   else if (kind === "message" && data.unitId) router.push({ pathname: "/chat", params: { unitId: data.unitId } });
   else if (kind === "announcement") router.push("/announcements");
   else if ((kind === "payment" || kind === "charge") && !guard) router.push("/finance");
+  else if (kind === "booking" && !guard) router.push("/my-bookings");
   else router.push("/");
 }
 

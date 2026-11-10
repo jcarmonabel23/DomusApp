@@ -30,10 +30,11 @@ const PasswordPage = lazy(() => import("@/app/account/PasswordPage"));
 const AccessPage = lazy(() => import("@/app/access/Page"));
 const AlertsPage = lazy(() => import("@/app/alerts/Page"));
 const FinancePage = lazy(() => import("@/app/finance/Page"));
+const BookingsPage = lazy(() => import("@/app/bookings/Page"));
 const AnnouncementsPage = lazy(() => import("@/app/announcements/Page"));
 
 /** Módulos que aún no tienen pantalla: el guard los resuelve como "próximamente" */
-const FUTURE = ["BOOKINGS", "CASES", "ASSEMBLIES", "DOCUMENTS", "SUPPLIERS", "INVENTORY", "REPORTS"];
+const FUTURE = ["CASES", "ASSEMBLIES", "DOCUMENTS", "SUPPLIERS", "INVENTORY", "REPORTS"];
 
 const lazyPage = (node: ReactNode) => (
   <Suspense
@@ -82,6 +83,7 @@ export default function AppRouter() {
           {guarded("ACCESS", "/access", <AccessPage />)}
           {guarded("ALERTS", "/alerts", <AlertsPage />)}
           {guarded("FINANCE", "/finance", <FinancePage />)}
+          {guarded("BOOKINGS", "/bookings", <BookingsPage />)}
           {guarded("MESSAGES", "/announcements", <AnnouncementsPage />)}
           {guarded("SETTINGS", "/settings", <SettingsPage />)}
           {FUTURE.map((code) => (

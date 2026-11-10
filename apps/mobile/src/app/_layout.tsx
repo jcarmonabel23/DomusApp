@@ -80,6 +80,8 @@ export default function RootLayout() {
           <Stack.Screen name="threads" />
           <Stack.Screen name="finance" />
           <Stack.Screen name="finance-pay" />
+          <Stack.Screen name="amenity" />
+          <Stack.Screen name="my-bookings" />
         </Stack.Protected>
         <Stack.Protected guard={ready}>
           <Stack.Screen name="chat" />

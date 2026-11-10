@@ -57,6 +57,12 @@ gastos. Pasarela de prueba (no cobra nada): `4242 4242 4242 4242` o `5555 5555 5
 CVC); otra tarjeta real se rechaza con `NOT_TEST_CARD`. Variables: `PAYMENT_GATEWAY=simulated`,
 `PAYMENT_WEBHOOK_SECRET` (cámbiela fuera de desarrollo) y `PAYMENT_SIM_DELAY_MS` (demora del webhook simulado).
 
+Para la fase 6 (Reservaciones) trae cinco áreas: Piscina y Gimnasio (compartidas, gratis), Rancho BBQ (₡10 000,
+24 h de anticipación, solo filiales al día), Salón de eventos (₡35 000, con aprobación, 72 h de anticipación) y
+Cancha multiuso. Hay reservas próximas de A-101 (rancho y piscina) y de B-302 (cancha), una solicitud del salón
+por aprobar (A-102), una cancelada y una pasada; el feriado de Navidad, una limpieza de la piscina en tres días y
+una restricción del salón para B-302. Como B-302 está en mora, no puede reservar el rancho.
+
 En producción, `SEED_DEMO=false`.
 
 ## App móvil (Expo Go)
@@ -114,12 +120,13 @@ db/
   init/        línea base (solo corre con el volumen vacío)
   migrations/  cambios de esquema desde la fase 2: AAAAMMDD_NNNN_descripcion.sql, nunca se editan
 scripts/
-  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3 y 5
+  smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3, 5 y 6
   smoke/lib.mjs     utilidades comunes (llamadas a la API, OTP desde Mailpit, login, cliente Socket.IO mínimo)
   smoke/fase1.mjs   login con OTP vía Mailpit, RLS entre condominios, roles, refresh móvil
   smoke/fase2.mjs   autorizados, fotos firmadas, caseta, visitas no anunciadas, bitácora Excel/PDF, logo
   smoke/fase3.mjs   socket, ciclo de alertas en vivo, aislamiento, mensajería, comunicados, campana, push tokens
   smoke/fase5.mjs   saldos y morosidad, FIFO, pagos manuales y en línea (webhook firmado), cargos, cuotas, gastos, exportes
+  smoke/fase6.mjs   áreas, disponibilidad, feriados, restricciones, validaciones, concurrencia, aprobación, cargos, bloqueos
 ```
 
 El límite de intentos de login (60 cada 15 min por IP) vive en memoria: para correr la suite completa dos veces
