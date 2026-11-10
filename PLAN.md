@@ -87,6 +87,10 @@ Tiene tres frentes: el **panel administrativo** (web), la **app móvil** (Propie
 - **Tablero**: bloque «Hoy» con lo que pide atención (alertas sin cerrar, ingresos y visitas por confirmar, pagos por revisar, morosidad, casos urgentes o vencidos, reservas por aprobar, contratos por vencer, mantenimientos y la próxima asamblea), cada uno con enlace a su módulo; se refresca en tiempo real.
 - Índices por fecha para las consultas del período. Datos de demostración con cinco meses de historia (bitácora, alertas y casos resueltos).
 
-### Fase 9 · Publicación
-- Ambientes `qa` y `prod` con despliegue desde las ramas, HTTPS con Caddy y correo SMTP real (igual que el DEPLOY de FabriHub).
-- Builds con EAS y publicación en Google Play y App Store.
+### Fase 9 · Publicación 🛠 lista para publicar
+- `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy con HTTPS automático es lo único publicado; el panel, la API, la BD y Mailpit quedan en la red interna. Probado con Caddy delante del stack local: HTTPS, cabeceras, API y WebSocket (la prueba de la fase 3 pasa completa por `wss://`).
+- `.env.production.example` y scripts `setup-server.sh` (Docker, firewall, clonado por rama), `deploy.sh` (valida, respalda la BD antes de actualizar, reconstruye y verifica) y `restore.sh` (probado en una BD temporal).
+- La API se niega a arrancar en qa o prod con valores de desarrollo (cookie sin HTTPS, URL http, secretos del ejemplo, Mailpit) y, en prod, con datos de demostración o la pasarela simulada. Nueva opción `PAYMENT_GATEWAY=none` (por defecto en prod): sin pagos con tarjeta hasta conectar una pasarela real; la app deja de ofrecerlos y el panel lo advierte.
+- `deploy.yml`: despliegue por SSH cuando la CI pasa en `qa` o `main`, con ambientes de GitHub (aprobación para prod). La CI valida el compose de publicación y los scripts.
+- Política de privacidad pública en `/privacidad` (enlazada desde la app) y builds de EAS: `EXPO_PUBLIC_API_URL` obligatoria por ambiente (HTTPS en producción), cifrado declarado para iOS, envío a la pista interna de Play.
+- **Pendiente (cuentas y servidores del dueño)**: crear los servidores, dominio y correo, configurar los secretos de GitHub, Firebase (push Android), Play Console y Apple Developer, la cuenta para los revisores y la revisión legal de la política. Pasos en [DEPLOY.md](DEPLOY.md).

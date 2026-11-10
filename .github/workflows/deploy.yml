@@ -1,0 +1,67 @@
+# DomusApp · despliegue automático: cuando la CI pasa en `qa` o `main`, entra por SSH al servidor de ese
+# ambiente y corre scripts/deploy/deploy.sh (que trae la rama, respalda la BD, reconstruye y levanta).
+#
+# Configuración (GitHub → Settings → Environments): crear los ambientes `qa` y `prod`, cada uno con:
+#   secrets  SSH_HOST (IP o dominio), SSH_USER (ubuntu), SSH_KEY (llave privada), SSH_KNOWN_HOSTS
+#            (salida de `ssh-keyscan <host>`: evita aceptar a ciegas la huella del servidor)
+#   vars     APP_URL (https://…) solo para mostrar el enlace
+# En `prod` conviene activar "Required reviewers": el despliegue espera la aprobación de alguien.
+# Sin esos secretos el trabajo se salta (el repositorio funciona igual sin servidores).
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [qa, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente
+        type: choice
+        options: [qa, prod]
+        required: true
+
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_branch || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.event.workflow_run.head_branch == 'main' && 'prod' || 'qa') }}
+      url: ${{ vars.APP_URL }}
+    steps:
+      - name: ¿Hay servidor configurado?
+        id: check
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          if [ -z "$SSH_HOST" ]; then
+            echo "Sin SSH_HOST en este ambiente: no se despliega." >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Llave SSH
+        if: steps.check.outputs.skip != 'true'
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Desplegar
+        if: steps.check.outputs.skip != 'true'
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'cd ~/DomusApp && sh scripts/deploy/deploy.sh'
+
+      - name: Limpiar la llave
+        if: always()
+        run: rm -f ~/.ssh/id_deploy

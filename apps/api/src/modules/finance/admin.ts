@@ -17,6 +17,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
+import { config } from "../../config.js";
 import { one, query, withTx } from "../../db.js";
 import { sendPdf, sendXlsx, type ExportColumn } from "../../lib/exports.js";
 import { conflict, handler, idParams, notFound } from "../../lib/http.js";
@@ -735,7 +736,8 @@ financeRoutes.get(
 
 // ================================================================== Parámetros
 
-financeRoutes.get("/settings", handler({}, () => financeSettings()));
+// gateway: la pasarela del servidor ("none" = sin pagos con tarjeta aunque el interruptor esté encendido)
+financeRoutes.get("/settings", handler({}, async () => ({ ...(await financeSettings()), gateway: config.PAYMENT_GATEWAY })));
 
 financeRoutes.put(
   "/settings",

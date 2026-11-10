@@ -55,8 +55,9 @@ const schema = z.object({
   EXPO_PUSH_ENABLED: bool,
   EXPO_ACCESS_TOKEN: z.string().optional().transform((v) => v || undefined),
 
-  // Pasarela de pago (fase 5). "simulated" = pruebas con tarjetas de prueba; el webhook se firma con el secreto
-  PAYMENT_GATEWAY: z.enum(["simulated"]).default("simulated"),
+  // Pasarela de pago (fase 5). "simulated" = pruebas con tarjetas de prueba; "none" = sin pagos con tarjeta.
+  // Sin valor: "none" en prod (la simulada aprobaría tarjetas de prueba) y "simulated" en dev/qa.
+  PAYMENT_GATEWAY: z.enum(["simulated", "none"]).optional(),
   PAYMENT_WEBHOOK_SECRET: z.string().min(16, "PAYMENT_WEBHOOK_SECRET debe tener al menos 16 caracteres").default("dev-only-webhook-secret-cambiar"),
   PAYMENT_SIM_DELAY_MS: z.coerce.number().int().min(0).max(30_000).default(1500),
 
@@ -77,6 +78,39 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const config = parsed.data;
+const env = parsed.data;
+
+export const config = { ...env, PAYMENT_GATEWAY: env.PAYMENT_GATEWAY ?? (env.APP_ENVIRONMENT === "prod" ? "none" : "simulated") };
+
+/**
+ * Ambientes publicados (qa y prod): se niega a arrancar con valores de desarrollo.
+ * Mejor un contenedor que no levanta (y lo dice en el log) que un servidor público con la cookie
+ * sin cifrar, el secreto del ejemplo o la pasarela simulada aprobando tarjetas de prueba.
+ */
+export function deploymentProblems(c: typeof config): string[] {
+  if (c.APP_ENVIRONMENT === "dev") return [];
+  const problems: string[] = [];
+  const looksDefault = (v: string | undefined) => !v || /cambiar|changeme|dev-only/i.test(v);
+  if (!c.COOKIE_SECURE) problems.push("COOKIE_SECURE debe ser true (la sesión viaja por HTTPS)");
+  if (!c.APP_PUBLIC_URL.startsWith("https://")) problems.push("APP_PUBLIC_URL debe empezar con https://");
+  if (looksDefault(c.JWT_ACCESS_SECRET) || c.JWT_ACCESS_SECRET.length < 64) problems.push("JWT_ACCESS_SECRET: genere uno con openssl rand -hex 32");
+  if (looksDefault(c.DB_PASSWORD)) problems.push("APP_DB_PASSWORD todavía es el del ejemplo");
+  if (c.SMTP_HOST === "mailpit") problems.push("SMTP_HOST: configure un proveedor de correo real (el OTP llega por correo)");
+  if (c.PAYMENT_GATEWAY !== "none" && looksDefault(c.PAYMENT_WEBHOOK_SECRET)) problems.push("PAYMENT_WEBHOOK_SECRET todavía es el de desarrollo");
+  if (c.APP_ENVIRONMENT === "prod") {
+    if (c.SEED_DEMO) problems.push("SEED_DEMO debe ser false en producción");
+    if (c.PAYMENT_GATEWAY === "simulated") problems.push("PAYMENT_GATEWAY=simulated no se permite en producción (use none hasta conectar una pasarela real)");
+  } else if (c.SEED_DEMO && c.DEMO_PASSWORD === "Demo-Domus-2026") {
+    problems.push("DEMO_PASSWORD: con SEED_DEMO en un servidor público use una contraseña propia (la del README es pública)");
+  }
+  return problems;
+}
+
+const problems = deploymentProblems(config);
+if (problems.length) {
+  console.error(`[config] Configuración no apta para ${config.APP_ENVIRONMENT}:`);
+  for (const p of problems) console.error(`  - ${p}`);
+  process.exit(1);
+}
 
 export const isProduction = config.NODE_ENV === "production";

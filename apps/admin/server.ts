@@ -7,11 +7,13 @@
  *  - /api/*   → proxy a la API (red interna de Docker). El navegador solo conoce este origen,
  *               así la cookie del refresh es same-site y la API nunca se publica.
  *  - /health  → health check.
+ *  - /privacidad → política de privacidad pública (la piden Google Play y App Store), con el correo SUPPORT_EMAIL.
  *  - resto    → SPA de Vite (dist) con fallback a index.html para el history mode.
  * Añade cabeceras de seguridad (CSP estricta, anti-clickjacking, no-sniff, referrer).
  */
 
 import express from "express";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createProxyMiddleware } from "http-proxy-middleware";
@@ -60,6 +62,27 @@ app.use(apiProxy);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
+});
+
+// Política de privacidad: HTML estático con el correo de contacto del ambiente (escapado)
+const escapeHtml = (v: string) => v.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const privacy = (() => {
+  try {
+    const support = escapeHtml(process.env.SUPPORT_EMAIL || "soporte@domusapp.com");
+    return readFileSync(path.join(__dirname, "legal", "privacidad.html"), "utf8")
+      .replaceAll("{{SUPPORT_EMAIL}}", support)
+      .replaceAll("{{UPDATED}}", "noviembre de 2026");
+  } catch {
+    return null;
+  }
+})();
+app.get(["/privacidad", "/privacy"], (_req, res) => {
+  if (!privacy) {
+    res.status(404).end();
+    return;
+  }
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.type("html").send(privacy);
 });
 
 const dist = path.join(__dirname, "dist");

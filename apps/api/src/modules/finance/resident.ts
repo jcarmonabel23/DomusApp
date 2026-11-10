@@ -23,7 +23,7 @@ import { authOf, condominiumOf, txCtx } from "../../security/context.js";
 import { assertResidentUnit, optText, residentUnitIds } from "../access/shared.js";
 import { rawUpload, replaceImage, signedUrl } from "../files/images.js";
 import { BANK_SELECT } from "./admin.js";
-import { gateway } from "./gateway.js";
+import { gateway, gatewayEnabled } from "./gateway.js";
 import { PAYMENT_JOINS, PAYMENT_SELECT, broadcastPayment, notifyPendingReview, paymentById, withReceipt, type PaymentRow } from "./payments.js";
 import { EXPIRED_NOTE } from "./generate.js";
 import { balancesToday, condoMoney, financeSettings, ledger, money } from "./shared.js";
@@ -47,7 +47,8 @@ residentFinanceRoutes.get(
     return {
       units: balances,
       bankAccounts: banks,
-      onlinePayments: settings.onlinePayments,
+      // Encendido por la administración Y con una pasarela configurada en el servidor
+      onlinePayments: settings.onlinePayments && gatewayEnabled(),
       currency: { code: m.currency, symbol: m.symbol, decimals: m.decimals },
       graceDays: settings.graceDays,
       dueDay: settings.dueDay
@@ -150,9 +151,9 @@ residentFinanceRoutes.post(
     const condominiumId = condominiumOf(req);
     await assertResidentUnit(authOf(req).userId, body.unitId);
     const settings = await financeSettings();
-    if (!settings.onlinePayments) throw conflict("ONLINE_DISABLED", "El condominio no tiene pagos en línea activos");
-    const m = await condoMoney(condominiumId);
     const gw = gateway();
+    if (!settings.onlinePayments || !gw) throw conflict("ONLINE_DISABLED", "El condominio no tiene pagos en línea activos");
+    const m = await condoMoney(condominiumId);
     // El pago se crea primero (para tener id en los metadatos) y la referencia se completa enseguida
     const r = await withTx(txCtx(req), async (client) => {
       const tmpRef = `pending_${crypto.randomUUID()}`;
@@ -199,7 +200,9 @@ residentFinanceRoutes.post(
       if (p.submittedBy !== auth.userId) throw forbidden("NOT_YOURS", "Este pago lo inició otra cuenta");
       if (p.status !== "pending") throw conflict("ALREADY_SETTLED", "Este pago ya fue procesado");
       // La tarjeta va directo a la pasarela: no se registra en la BD ni en los logs
-      const result = await gateway().confirm(p.ref!, body);
+      const gw = gateway();
+      if (!gw) throw conflict("ONLINE_DISABLED", "Los pagos en línea no están disponibles");
+      const result = await gw.confirm(p.ref!, body);
       return { status: result.status, card: result.card };
     }
   )

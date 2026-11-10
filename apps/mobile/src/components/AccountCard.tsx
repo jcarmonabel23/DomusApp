@@ -1,14 +1,15 @@
 /**
  * @project DomusApp - Mobile
  * @file src/components/AccountCard.tsx
- * @description Cuenta del usuario: condominio activo, cambio de condominio y cierre de sesión
+ * @description Cuenta del usuario: condominio activo, cambio de condominio, política de privacidad, versión y cierre de sesión
  */
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { ApiError } from "@/lib/api";
 import { signOut, switchCondominium } from "@/lib/auth";
+import { API_URL, APP_VERSION } from "@/lib/config";
 import { useSession } from "@/lib/session";
 import { useBrand } from "@/theme/brand";
 import { colors, radius } from "@/theme/colors";
@@ -71,10 +72,16 @@ export function AccountCard() {
         </View>
       )}
 
+      <Pressable onPress={() => void Linking.openURL(`${API_URL}/privacidad`)} style={styles.link} accessibilityRole="link" hitSlop={8}>
+        <MaterialIcons name="privacy-tip" size={20} color={colors.textMuted} />
+        <Text style={styles.linkText}>Política de privacidad y eliminación de cuenta</Text>
+      </Pressable>
+
       <Pressable onPress={confirmSignOut} style={styles.logout} accessibilityRole="button" hitSlop={8}>
         <MaterialIcons name="logout" size={20} color={colors.danger} />
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </Pressable>
+      <Text style={[styles.muted, { marginTop: 8 }]}>DomusApp {APP_VERSION}</Text>
     </View>
   );
 }
@@ -86,6 +93,8 @@ const styles = StyleSheet.create({
   section: { fontSize: 13, fontWeight: "700", color: colors.textMuted, textTransform: "uppercase" },
   condo: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.sm, backgroundColor: colors.background },
   condoName: { fontSize: 15, fontWeight: "600", color: colors.text },
+  link: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, minHeight: 44 },
+  linkText: { color: colors.text, fontSize: 15, flexShrink: 1 },
   logout: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, alignSelf: "flex-start", minHeight: 44 },
   logoutText: { color: colors.danger, fontWeight: "700", fontSize: 15 }
 });

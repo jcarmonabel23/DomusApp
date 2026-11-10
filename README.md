@@ -23,6 +23,9 @@ Los puertos no chocan con los de FabriHub (8080, 8025, 5050), así que puede cor
 
 Para reiniciar la BD desde cero (vuelve a ejecutar `db/init`): `docker compose down -v`.
 
+**Publicación (qa y producción)**: HTTPS con Caddy, correo real, despliegue automático desde las ramas, respaldos
+y builds de la app para las tiendas: ver [DEPLOY.md](DEPLOY.md).
+
 ## Acceso
 
 El ingreso es en dos pasos: contraseña y luego un código de 6 dígitos que llega por correo (en desarrollo, a
@@ -102,7 +105,8 @@ eas build -p android --profile preview     # APK para instalar en el teléfono c
 ```
 
 El perfil `preview` instala "DomusApp (prueba)" (`com.domusapp.mobile.preview`), que convive con la versión de
-tienda y permite HTTP para llegar a la API de la LAN. `production` exige HTTPS. En los builds, el push de una
+tienda y permite HTTP para llegar a la API de la LAN. `production` exige HTTPS. Para los builds de qa y de
+tienda, ver [DEPLOY.md](DEPLOY.md#8-app-móvil-builds-y-tiendas). En los builds, el push de una
 alerta suena con la sirena aunque la app esté cerrada.
 
 **Tiempo real y notificaciones.** Panel y app se conectan por Socket.IO en `/api/socket.io` (pasa por el proxy del
@@ -126,10 +130,13 @@ apps/
   api/       Node 22 + TS + Express 5 + pg + zod (un handler por acción, como FabriHub)
   admin/     React 19 + Vite + Mantine 8 + Tailwind 4; server.ts = estáticos + proxy /api + CSP
   mobile/    Expo SDK 58 + Expo Router (src/app); una app con interfaz por rol
+deploy/
+  Caddyfile    HTTPS de qa y prod (docker-compose.prod.yml)
 db/
   init/        línea base (solo corre con el volumen vacío)
   migrations/  cambios de esquema desde la fase 2: AAAAMMDD_NNNN_descripcion.sql, nunca se editan
 scripts/
+  deploy/           setup-server.sh (una vez por servidor), deploy.sh (actualizar), restore.sh (respaldos)
   smoke.sh          pruebas de humo (fase 0) y llamada a las de fases 1, 2, 3, 5, 6, 7 y 8
   smoke/lib.mjs     utilidades comunes (llamadas a la API, OTP desde Mailpit, login, cliente Socket.IO mínimo)
   smoke/fase1.mjs   login con OTP vía Mailpit, RLS entre condominios, roles, refresh móvil
@@ -146,4 +153,5 @@ seguidas, reinicie la API (`docker compose restart api`).
 
 ## Ramas
 
-`dev` (desarrollo) → `qa` (pruebas) → `main` (producción). La CI corre en los push y PR hacia las tres.
+`dev` (desarrollo) → `qa` (pruebas) → `main` (producción). La CI corre en los push y PR hacia las tres; cuando pasa
+en `qa` o `main`, `deploy.yml` publica en el servidor de ese ambiente (si está configurado, ver DEPLOY.md).

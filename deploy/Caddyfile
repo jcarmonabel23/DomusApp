@@ -1,0 +1,25 @@
+# =====================================================================
+#  DomusApp · Caddy (proxy HTTPS de qa y producción)
+#  Saca y renueva solo el certificado de {$DOMAIN}. HTTP redirige a HTTPS.
+# =====================================================================
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# Subidas (comprobantes, fotos, PDF): la API limita a UPLOAD_MAX_MB; esto corta antes lo desmedido
+	request_body {
+		max_size 25MB
+	}
+
+	# El panel (Express) sirve la SPA y hace de proxy /api → api:4000 (también el WebSocket de
+	# /api/socket.io que usan el panel y la app); ya pone CSP y demás cabeceras.
+	reverse_proxy admin:3005
+}

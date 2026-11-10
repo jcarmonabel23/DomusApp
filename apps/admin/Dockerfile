@@ -23,6 +23,7 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup
 COPY --from=builder --chown=web:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=web:nodejs /app/dist ./dist
 COPY --from=builder --chown=web:nodejs /app/server.mjs ./server.mjs
+COPY --from=builder --chown=web:nodejs /app/legal ./legal
 COPY --from=builder --chown=web:nodejs /app/package.json ./package.json
 USER web
 EXPOSE 3005

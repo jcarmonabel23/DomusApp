@@ -44,6 +44,12 @@ jobs:
         run: |
           cp .env.example .env
           sed -i "s/^JWT_ACCESS_SECRET=.*/JWT_ACCESS_SECRET=$(openssl rand -hex 32)/" .env
+      - name: Compose de publicación válido (qa/prod)
+        run: |
+          sed -e 's/CAMBIAR-qa-o-prod/prod/' -e "s/CAMBIAR-openssl-rand-hex-32/$(openssl rand -hex 32)/" -e 's/CAMBIAR/ci/g' \
+            .env.production.example > /tmp/env.prod
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file /tmp/env.prod config -q
+          sh -n scripts/deploy/deploy.sh && sh -n scripts/deploy/setup-server.sh && sh -n scripts/deploy/restore.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 22

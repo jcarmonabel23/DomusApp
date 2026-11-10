@@ -183,9 +183,12 @@ async function deliverWebhook(gateway: string, event: GatewayEvent, attempt = 1)
 
 const GATEWAYS: Record<string, PaymentGateway> = { simulated: new SimulatedGateway() };
 
-export function gateway(): PaymentGateway {
-  return GATEWAYS[config.PAYMENT_GATEWAY];
+/** Pasarela activa; null con PAYMENT_GATEWAY=none (sin pagos con tarjeta) */
+export function gateway(): PaymentGateway | null {
+  return GATEWAYS[config.PAYMENT_GATEWAY] ?? null;
 }
+
+export const gatewayEnabled = () => gateway() !== null;
 
 export function gatewayByName(name: string): PaymentGateway | null {
   return GATEWAYS[name] ?? null;

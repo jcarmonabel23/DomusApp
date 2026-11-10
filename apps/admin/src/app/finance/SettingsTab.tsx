@@ -19,6 +19,8 @@ interface Settings {
   graceDays: number;
   dueDay: number;
   onlinePayments: boolean;
+  /** Pasarela del servidor: "none" = no hay pagos con tarjeta aunque el interruptor esté encendido */
+  gateway?: "simulated" | "none";
 }
 
 type BankForm = Omit<BankAccount, "id" | "iban" | "notes"> & { id: string | null; iban: string; notes: string };
@@ -106,7 +108,11 @@ export default function SettingsTab() {
             </Text>
             <Switch
               label="Permitir pago en línea con tarjeta en la app"
-              description="Pasarela de prueba: use la tarjeta 4242 4242 4242 4242"
+              description={
+                form.gateway === "none"
+                  ? "El servidor no tiene una pasarela de pago conectada: la app no ofrecerá el pago con tarjeta hasta que se configure."
+                  : "Pasarela de prueba: use la tarjeta 4242 4242 4242 4242"
+              }
               checked={form.onlinePayments}
               onChange={(e) => setForm({ ...form, onlinePayments: e.currentTarget.checked })}
               disabled={!editable}
