@@ -26,8 +26,8 @@ type Card = {
   badge?: number;
 };
 
-const CASES: Card = { title: "Casos", text: "Dale seguimiento a tus casos aquí", icon: "support-agent", bg: colors.cardYellow, fg: "#5b4a1a", tall: true };
-const SUPPLIERS: Card = { title: "Nuevos proveedores", text: "Fase 7", icon: "storefront", bg: colors.cardLavender, fg: "#3f4566" };
+const CASES: Card = { title: "Casos", text: "Dale seguimiento a tus casos aquí", icon: "support-agent", bg: colors.cardYellow, fg: "#5b4a1a", tall: true, onPress: () => router.push("/cases") };
+const SUPPLIERS: Card = { title: "Nuevos proveedores", text: "Directorio recomendado", icon: "storefront", bg: colors.cardLavender, fg: "#3f4566", onPress: () => router.push("/suppliers") };
 const VISITS: Omit<Card, "text"> = { title: "Mis últimas visitas", icon: "history", bg: colors.cardNavy, fg: "#e8ebf7" };
 
 

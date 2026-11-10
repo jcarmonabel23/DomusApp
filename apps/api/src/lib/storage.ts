@@ -20,7 +20,7 @@ export interface Storage {
   remove(prefix: string): Promise<void>;
 }
 
-const KEY_RE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}(\/[a-z0-9]+\.(webp|png))?$/;
+const KEY_RE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}(\/[a-z0-9]+\.(webp|png|pdf))?$/;
 
 function localStorage(root: string): Storage {
   const pathOf = (key: string) => {

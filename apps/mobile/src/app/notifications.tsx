@@ -24,7 +24,10 @@ const ICON: Record<AppNotification["kind"], { icon: ComponentProps<typeof Materi
   announcement: { icon: "campaign", color: "#7c3aed" },
   payment: { icon: "payments", color: "#13795b" },
   charge: { icon: "receipt-long", color: colors.warning },
-  booking: { icon: "event-available", color: "#0b7fa6" }
+  booking: { icon: "event-available", color: "#0b7fa6" },
+  case: { icon: "support-agent", color: "#a16207" },
+  assembly: { icon: "groups", color: "#1a5fa8" },
+  document: { icon: "folder-shared", color: "#4b5563" }
 };
 
 export default function NotificationsScreen() {

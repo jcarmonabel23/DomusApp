@@ -19,6 +19,7 @@ import type pg from "pg";
 import { config } from "./config.js";
 import { one, withTx } from "./db.js";
 import { chargeBooking } from "./modules/bookings/shared.js";
+import { seedDemoAdmin } from "./demoAdmin.js";
 import { logger } from "./lib/logger.js";
 import { hashPassword } from "./lib/passwords.js";
 import { applyInterest, generateMonth } from "./modules/finance/generate.js";
@@ -429,5 +430,6 @@ export async function bootstrap(): Promise<void> {
     await seedDemoAlerts();
     await seedDemoFinance();
     await seedDemoBookings();
+    await seedDemoAdmin();
   }
 }

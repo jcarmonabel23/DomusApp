@@ -82,6 +82,14 @@ export default function RootLayout() {
           <Stack.Screen name="finance-pay" />
           <Stack.Screen name="amenity" />
           <Stack.Screen name="my-bookings" />
+          <Stack.Screen name="cases" />
+          <Stack.Screen name="case-new" />
+          <Stack.Screen name="case" />
+          <Stack.Screen name="documents" />
+          <Stack.Screen name="assemblies" />
+          <Stack.Screen name="assembly" />
+          <Stack.Screen name="agreements" />
+          <Stack.Screen name="suppliers" />
         </Stack.Protected>
         <Stack.Protected guard={ready}>
           <Stack.Screen name="chat" />

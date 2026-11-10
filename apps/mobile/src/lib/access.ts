@@ -162,7 +162,7 @@ export function permitStatus(a: Authorization): { label: string; tone: "ok" | "m
   return { label: "Programado", tone: "ok" };
 }
 
-export const unitLabel = (u: { code?: string; unitCode?: string; tower?: string | null; unitTower?: string | null }): string => {
+export const unitLabel = (u: { code?: string; unitCode?: string | null; tower?: string | null; unitTower?: string | null }): string => {
   const code = u.code ?? u.unitCode ?? "";
   const tower = u.tower ?? u.unitTower;
   return tower ? `${code} · ${tower}` : code;

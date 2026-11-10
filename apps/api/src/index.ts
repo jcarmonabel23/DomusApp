@@ -45,6 +45,13 @@ import { paymentWebhook } from "./modules/finance/payments.js";
 import { residentFinanceRoutes } from "./modules/finance/resident.js";
 import { bookingRoutes } from "./modules/bookings/admin.js";
 import { residentBookingRoutes } from "./modules/bookings/resident.js";
+import { assemblyRoutes } from "./modules/assemblies/routes.js";
+import { caseRoutes } from "./modules/cases/admin.js";
+import { residentCaseRoutes } from "./modules/cases/resident.js";
+import { residentCommunityRoutes } from "./modules/community/resident.js";
+import { documentRoutes } from "./modules/documents/routes.js";
+import { inventoryRoutes } from "./modules/inventory/routes.js";
+import { supplierRoutes } from "./modules/suppliers/routes.js";
 
 const app = express();
 
@@ -109,6 +116,13 @@ v1.use("/finance", financeRoutes);
 v1.use("/resident", residentFinanceRoutes);
 v1.use("/bookings", bookingRoutes);
 v1.use("/resident", residentBookingRoutes);
+v1.use("/cases", caseRoutes);
+v1.use("/resident", residentCaseRoutes);
+v1.use("/assemblies", assemblyRoutes);
+v1.use("/documents", documentRoutes);
+v1.use("/suppliers", supplierRoutes);
+v1.use("/inventory", inventoryRoutes);
+v1.use("/resident", residentCommunityRoutes);
 app.use("/api/v1", v1);
 
 app.use((_req, res) => {

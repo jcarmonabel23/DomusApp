@@ -17,10 +17,10 @@ import { colors, radius } from "@/theme/colors";
 
 const ITEMS: { title: string; icon: ComponentProps<typeof MaterialIcons>["name"]; phase: number; href?: Href }[] = [
   { title: "Comunicados", icon: "campaign", phase: 3, href: "/announcements" },
-  { title: "Documentos", icon: "folder-shared", phase: 7 },
-  { title: "Seguimiento a acuerdos", icon: "handshake", phase: 7 },
+  { title: "Documentos", icon: "folder-shared", phase: 7, href: "/documents" },
+  { title: "Seguimiento a acuerdos", icon: "handshake", phase: 7, href: "/agreements" },
   { title: "Cuentas bancarias", icon: "account-balance", phase: 5 },
-  { title: "Asambleas", icon: "groups", phase: 7 }
+  { title: "Asambleas", icon: "groups", phase: 7, href: "/assemblies" }
 ];
 
 export default function CondoScreen() {

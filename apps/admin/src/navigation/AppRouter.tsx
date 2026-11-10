@@ -31,10 +31,15 @@ const AccessPage = lazy(() => import("@/app/access/Page"));
 const AlertsPage = lazy(() => import("@/app/alerts/Page"));
 const FinancePage = lazy(() => import("@/app/finance/Page"));
 const BookingsPage = lazy(() => import("@/app/bookings/Page"));
+const CasesPage = lazy(() => import("@/app/cases/Page"));
+const AssembliesPage = lazy(() => import("@/app/assemblies/Page"));
+const DocumentsPage = lazy(() => import("@/app/documents/Page"));
+const SuppliersPage = lazy(() => import("@/app/suppliers/Page"));
+const InventoryPage = lazy(() => import("@/app/inventory/Page"));
 const AnnouncementsPage = lazy(() => import("@/app/announcements/Page"));
 
 /** Módulos que aún no tienen pantalla: el guard los resuelve como "próximamente" */
-const FUTURE = ["CASES", "ASSEMBLIES", "DOCUMENTS", "SUPPLIERS", "INVENTORY", "REPORTS"];
+const FUTURE = ["REPORTS"];
 
 const lazyPage = (node: ReactNode) => (
   <Suspense
@@ -84,6 +89,11 @@ export default function AppRouter() {
           {guarded("ALERTS", "/alerts", <AlertsPage />)}
           {guarded("FINANCE", "/finance", <FinancePage />)}
           {guarded("BOOKINGS", "/bookings", <BookingsPage />)}
+          {guarded("CASES", "/cases", <CasesPage />)}
+          {guarded("ASSEMBLIES", "/assemblies", <AssembliesPage />)}
+          {guarded("DOCUMENTS", "/documents", <DocumentsPage />)}
+          {guarded("SUPPLIERS", "/suppliers", <SuppliersPage />)}
+          {guarded("INVENTORY", "/inventory", <InventoryPage />)}
           {guarded("MESSAGES", "/announcements", <AnnouncementsPage />)}
           {guarded("SETTINGS", "/settings", <SettingsPage />)}
           {FUTURE.map((code) => (

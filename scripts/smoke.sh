@@ -35,5 +35,7 @@ echo
 BASE="$BASE" MAILPIT="http://127.0.0.1:${MAILPIT_PORT:-8026}" DEMO_PASSWORD="$DEMO_PASSWORD" node scripts/smoke/fase5.mjs || fail=1
 echo
 BASE="$BASE" MAILPIT="http://127.0.0.1:${MAILPIT_PORT:-8026}" DEMO_PASSWORD="$DEMO_PASSWORD" node scripts/smoke/fase6.mjs || fail=1
+echo
+BASE="$BASE" MAILPIT="http://127.0.0.1:${MAILPIT_PORT:-8026}" DEMO_PASSWORD="$DEMO_PASSWORD" node scripts/smoke/fase7.mjs || fail=1
 
 [ "$fail" -eq 0 ] && echo "Todo bien." || { echo "Hay fallas."; exit 1; }

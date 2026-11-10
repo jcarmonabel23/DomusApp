@@ -38,7 +38,7 @@ const SHORTCUTS: { icon: "person-add-alt-1" | "directions-car" | "history" | "re
   { icon: "person-add-alt-1", label: "Nuevo autorizado", href: { pathname: "/authorization", params: { kind: "temporary" } } },
   { icon: "directions-car", label: "Mis vehículos", href: "/vehicles" },
   { icon: "history", label: "Mis visitas", href: "/visits" },
-  { icon: "receipt-long", label: "Estado de cuenta", href: null }
+  { icon: "receipt-long", label: "Estado de cuenta", href: "/finance" }
 ];
 
 export default function HomeScreen() {

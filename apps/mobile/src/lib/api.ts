@@ -122,8 +122,12 @@ export interface SystemStatus {
 export const fileUrl = (path: string | null | undefined): string | undefined => (path ? `${API_URL}${path}` : undefined);
 
 /** Sube una imagen local (uri del selector o la cámara) como cuerpo crudo */
-export async function uploadImage<T>(path: string, image: { uri: string; mimeType?: string | null; fileName?: string | null }): Promise<T> {
+export async function uploadImage<T>(
+  path: string,
+  image: { uri: string; mimeType?: string | null; fileName?: string | null },
+  method: "PUT" | "POST" = "PUT"
+): Promise<T> {
   const blob = await (await fetch(image.uri)).blob();
   const type = image.mimeType ?? (blob.type || "image/jpeg");
-  return api<T>(path, { method: "PUT", file: { blob, type, name: image.fileName ?? "foto.jpg" } });
+  return api<T>(path, { method, file: { blob, type, name: image.fileName ?? "foto.jpg" } });
 }

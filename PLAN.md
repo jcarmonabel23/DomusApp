@@ -71,9 +71,13 @@ Tiene tres frentes: el **panel administrativo** (web), la **app móvil** (Propie
 - Feriados y cierres (de un área o de todas, por día u horas, con fin o indefinidos) y restricciones a una filial; al crearlos puede cancelar las reservas que choquen, avisando a cada filial.
 - Panel: módulo **BOOKINGS** con indicadores, calendario semanal por área, reservas (revisión, reserva a nombre de una filial, Excel/PDF), áreas y bloqueos. App: pestaña Reservaciones como en las capturas (saludo, buscador, cuadrícula de áreas), detalle con reglamento y horarios, Mis reservas con cancelación; avisos `booking` en la campana y por push.
 
-### Fase 7 · Gestión administrativa
-- **Casos**: daños, mejoras, quejas, sugerencias y denuncias, con fotos y documentos, seguimiento por estados y respuesta.
-- Asambleas y seguimiento de acuerdos, reglamentos y documentos, proveedores (contratos, personal y contactos) e inventarios.
+### Fase 7 · Gestión administrativa ✅
+- **Casos**: daños, mejoras, quejas, sugerencias y denuncias (estas pueden ser anónimas: el panel no ve quién la hizo). Número consecutivo por condominio, prioridad, responsable, proveedor y fecha compromiso; estados abierto, en proceso, resuelto, cerrado y rechazado con su historial; comentarios internos que el residente no ve; hasta 12 fotos o PDF por caso. El residente confirma la solución con una calificación de 1 a 5 o lo reabre. Los casos no se borran.
+- **Asambleas**: ordinarias y extraordinarias, presenciales o virtuales, con agenda; aviso opcional a los residentes; al celebrarse se registra asistencia, quórum, resumen y acta (PDF). **Acuerdos** numerados con responsable o proveedor, fecha compromiso, avance y estado; los vencidos se marcan.
+- **Documentos**: reglamentos, circulares, actas, manuales, formularios y financieros en PDF o imagen, para residentes o solo para el personal, con aviso opcional.
+- **Proveedores**: categoría, datos fiscales, contactos, personal autorizado y contratos (monto, frecuencia, vigencia y archivo, con alerta de vencimiento); los marcados como recomendados forman el directorio de la app.
+- **Inventario**: código, categoría, ubicación o área común, cantidad, valor, estado y foto; mantenimiento periódico con próxima fecha (alerta a 15 días) y bitácora de mantenimientos, reparaciones, traslados, cambios de estado y bajas.
+- Los PDF se validan por su contenido (encabezado y cierre) y se descargan con su nombre. Panel: módulos **CASES**, **ASSEMBLIES**, **DOCUMENTS**, **SUPPLIERS** e **INVENTORY** con exportes. App: Casos (lista, nuevo con fotos, detalle con conversación, confirmación y reapertura), Documentos, Asambleas con acuerdos, Seguimiento a acuerdos y directorio de proveedores; avisos `case`, `assembly` y `document` en la campana y por push.
 
 ### Fase 8 · Reportes y tablero
 - Indicadores: ingresos, morosidad, accesos, incidentes y tiempos de atención de alertas. Todo se puede exportar.
